@@ -582,7 +582,8 @@ function triggerVoiceCallAlert(englishMessage, tamilMessage) {
   const formData = new URLSearchParams();
   formData.append('To', targetPhone);
   formData.append('From', TWILIO_PHONE_NUMBER);
-  formData.append('Url', 'https://raw.githubusercontent.com/SheikRamiz/Aqua-Nexus/main/voice.xml');
+  formData.append('Url', 'https://sheikramiz.github.io/Aqua-Nexus/voice.xml');
+
   fetch(twilioApiUrl, {
     method: 'POST',
     headers: {
@@ -594,7 +595,7 @@ function triggerVoiceCallAlert(englishMessage, tamilMessage) {
   .then(res => res.json())
   .then(data => console.log('Twilio Call Response:', data))
   .catch(err => console.error('Call Request Error:', err));
-}
+
   // Local Web Speech Fallback
   if ('speechSynthesis' in window) {
     window.speechSynthesis.cancel();
