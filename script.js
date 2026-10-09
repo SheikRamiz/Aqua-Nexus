@@ -583,6 +583,7 @@ function triggerVoiceCallAlert(englishMessage, tamilMessage) {
   formData.append('To', targetPhone);
   formData.append('From', TWILIO_PHONE_NUMBER);
   formData.append('Url', 'https://sheikramiz.github.io/Aqua-Nexus/voice.xml');
+  formData.append('Method', 'GET'); // CRITICAL: Forces Twilio to send GET instead of POST to GitHub Pages
 
   fetch(twilioApiUrl, {
     method: 'POST',
