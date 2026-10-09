@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AQUA-NEXUS | Smart Water Decision Engine</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Firebase SDKs (v8 Compat) -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Mukta+Malar:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body id="mainBody" class="font-['Sora'] min-h-screen text-slate-800 bg-cover bg-center bg-fixed transition-all duration-700 bg-agri-full">
+
+  <!-- BACKGROUND OVERLAY -->
+  <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-[1px] pointer-events-none z-0"></div>
+
+  <!-- MULTI-STEP LOGIN MODAL -->
+  <div id="loginModal" class="fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-card bg-white/95 p-8 rounded-3xl max-w-md w-full border border-white/60 shadow-2xl space-y-6">
+      
+      <div class="text-center">
+        <div class="w-16 h-16 rounded-full bg-[#0284c7] text-white text-3xl font-bold flex items-center justify-center mx-auto mb-3 shadow-lg">💧</div>
+        <h2 class="text-2xl font-extrabold text-slate-900">AQUA-NEXUS</h2>
+        <p id="loginSubtitle" class="text-xs text-slate-500 mt-1 font-semibold">Select your account authorization type</p>
+      </div>
+
+      <!-- STEP 1: USER vs OFFICER SELECTION -->
+      <div id="loginStep1" class="space-y-4">
+        <label id="lblAuthType" class="text-xs font-extrabold text-slate-400 uppercase tracking-wider block text-center">I am signing in as:</label>
+        <div class="grid grid-cols-2 gap-4">
+          <button type="button" onclick="goToStep2('user')" class="p-5 rounded-2xl font-extrabold text-sm border-2 border-sky-100 bg-sky-50/80 text-[#0284c7] hover:border-[#0284c7] hover:bg-sky-100 transition-all flex flex-col items-center gap-2 shadow-sm">
+            <span class="text-3xl">👤</span>
+            <span id="btnCitizenLabel">CITIZEN / USER</span>
+          </button>
+          <button type="button" onclick="goToStep2('officer')" class="p-5 rounded-2xl font-extrabold text-sm border-2 border-indigo-100 bg-indigo-50/80 text-indigo-700 hover:border-indigo-600 hover:bg-indigo-100 transition-all flex flex-col items-center gap-2 shadow-sm">
+            <span class="text-3xl">🛡️</span>
+            <span id="btnOfficerLabel">PUBLIC OFFICER</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP 2A: CITIZEN / USER LOGIN FORM -->
+      <form id="loginStep2User" onsubmit="handleFinalLogin(event, 'user')" class="hidden space-y-4">
+        <div>
+          <label id="lblSectorProfile" class="text-xs font-extrabold text-slate-400 uppercase tracking-wider block mb-2">Select User Sector Profile</label>
+          <div class="grid grid-cols-2 gap-3">
+            <button type="button" id="btnSubAgri" onclick="setSubRole('user', 'agriculture')" class="py-3 px-4 rounded-2xl font-extrabold text-xs border border-[#0284c7] bg-sky-50 text-[#0284c7]">🌾 Agriculture</button>
+            <button type="button" id="btnSubHouse" onclick="setSubRole('user', 'house')" class="py-3 px-4 rounded-2xl font-extrabold text-xs border border-slate-200 bg-slate-100 text-slate-600">🏠 Household</button>
+          </div>
+        </div>
+
+        <div>
+          <label id="lblMobilePhone" class="text-xs font-extrabold text-slate-400 uppercase tracking-wider block mb-1">Mobile Phone Number (Target Phone Call)</label>
+          <input id="userPhoneInput" type="tel" value="+919597268190" placeholder="+91 98765 43210" class="w-full px-4 py-3 rounded-2xl bg-slate-100/90 border border-slate-200 font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0284c7]" required />
+        </div>
+
+        <div class="flex gap-2 pt-2">
+          <button type="button" onclick="backToStep1()" id="btnBackUser" class="w-1/3 py-3.5 rounded-2xl bg-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-300 transition-all">← Back</button>
+          <button type="submit" id="btnAccessDash" class="w-2/3 py-3.5 rounded-2xl bg-[#0284c7] text-white font-extrabold text-xs shadow-md hover:bg-sky-700 transition-all">ACCESS DASHBOARD</button>
+        </div>
+      </form>
+
+      <!-- STEP 2B: PUBLIC OFFICER LOGIN FORM -->
+      <form id="loginStep2Officer" onsubmit="handleFinalLogin(event, 'officer')" class="hidden space-y-4">
+        <div>
+          <label id="lblJurisdiction" class="text-xs font-extrabold text-slate-400 uppercase tracking-wider block mb-2">Select Administrative Jurisdiction</label>
+          <div class="grid grid-cols-2 gap-3">
+            <button type="button" id="btnSubVillage" onclick="setSubRole('officer', 'village')" class="py-3 px-4 rounded-2xl font-extrabold text-xs border border-emerald-600 bg-emerald-50 text-emerald-800">🌾 Village Officer</button>
+            <button type="button" id="btnSubCity" onclick="setSubRole('officer', 'city')" class="py-3 px-4 rounded-2xl font-extrabold text-xs border border-slate-200 bg-slate-100 text-slate-600">🏙️ City Officer</button>
+          </div>
+        </div>
+
+        <div>
+          <label id="lblBadgeId" class="text-xs font-extrabold text-slate-400 uppercase tracking-wider block mb-1">Officer Mobile ID (For Voice Calls)</label>
+          <input id="officerIdInput" type="text" value="+919597268190" placeholder="+91 98765 43210 or Badge ID" class="w-full px-4 py-3 rounded-2xl bg-slate-100/90 border border-slate-200 font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-600" required />
+        </div>
+
+        <div class="flex gap-2 pt-2">
+          <button type="button" onclick="backToStep1()" id="btnBackOfficer" class="w-1/3 py-3.5 rounded-2xl bg-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-300 transition-all">← Back</button>
+          <button type="submit" id="btnEnterCommand" class="w-2/3 py-3.5 rounded-2xl bg-indigo-600 text-white font-extrabold text-xs shadow-md hover:bg-indigo-700 transition-all">ENTER COMMAND CENTER</button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- MAIN WRAPPER -->
+  <div class="relative z-10 max-w-7xl mx-auto p-4 md:p-8 space-y-8">
+
+    <!-- NAVIGATION DOCK WITH LANGUAGE SWITCHER -->
+    <header class="sticky top-4 z-50">
+      <div class="glass-card bg-white/85 backdrop-blur-md rounded-full px-6 py-3.5 flex justify-between items-center shadow-lg border border-white/60 flex-wrap gap-3">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-[#0284c7] text-white font-bold text-xl flex items-center justify-center shadow-md">💧</div>
+          <div>
+            <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">AQUA-NEXUS</h1>
+            <p id="userSessionBadge" class="text-xs text-slate-600 font-semibold">User: Not Logged In</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <!-- LANGUAGE SWITCHER TOGGLE -->
+          <div class="bg-slate-100/90 p-1 rounded-full border border-slate-200 flex items-center gap-1 shadow-inner">
+            <button id="btnLangEN" onclick="switchLanguage('en')" class="px-3 py-1 rounded-full text-xs font-extrabold bg-[#0284c7] text-white shadow-sm transition-all">English</button>
+            <button id="btnLangTA" onclick="switchLanguage('ta')" class="px-3 py-1 rounded-full text-xs font-extrabold text-slate-600 hover:text-slate-900 transition-all">தமிழ்</button>
+          </div>
+
+          <div class="px-3.5 py-1.5 rounded-full flex items-center gap-2 bg-white/90 border border-slate-200/80 shadow-sm">
+            <span id="diodeLight" class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span id="statusBadge" class="text-xs font-extrabold text-slate-700 uppercase">SYSTEM NORMAL</span>
+          </div>
+          <button onclick="logout()" id="btnSignOut" class="px-3.5 py-1.5 rounded-full bg-slate-200/90 text-slate-700 text-xs font-extrabold hover:bg-slate-300 transition-all">
+            🔒 Sign Out
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- PAGE 1: USER DASHBOARD -->
+    <div id="pageUser" class="hidden space-y-8">
+
+      <!-- TELEMETRY METRIC CARDS -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="glass-card rounded-3xl p-6 bg-white/85 backdrop-blur-md shadow-md border border-white/60">
+          <span id="card1Label" class="text-xs font-bold text-slate-500 uppercase">Water Stress Score</span>
+          <p id="waterStressScore" class="text-4xl font-extrabold text-emerald-600 mt-2">28/100</p>
+          <div class="w-full bg-slate-200/80 h-2 rounded-full mt-4 overflow-hidden">
+            <div id="stressBar" class="bg-emerald-500 h-2 rounded-full transition-all duration-500" style="width: 28%"></div>
+          </div>
+        </div>
+
+        <div class="glass-card rounded-3xl p-6 bg-white/85 backdrop-blur-md shadow-md border border-white/60">
+          <span id="reservesLabel" class="text-xs font-bold text-slate-500 uppercase">Estimated Farm Reserves</span>
+          <p id="daysRemaining" class="text-4xl font-extrabold text-[#0284c7] mt-2">8.5 Days</p>
+          <p id="reservesSubtext" class="text-xs text-slate-500 mt-3 font-semibold">based on crop soil evapotranspiration</p>
+        </div>
+
+        <div class="glass-card rounded-3xl p-6 bg-white/85 backdrop-blur-md shadow-md border border-white/60">
+          <span id="storageLabel" class="text-xs font-bold text-slate-500 uppercase">Storage Sump Reservoir</span>
+          <p id="tankLevel" class="text-4xl font-extrabold text-slate-800 mt-2">78%</p>
+          <div class="w-full bg-slate-200/80 h-2 rounded-full mt-4 overflow-hidden">
+            <div id="tankBar" class="bg-[#0284c7] h-2 rounded-full transition-all duration-500" style="width: 78%"></div>
+          </div>
+        </div>
+
+        <div class="glass-card rounded-3xl p-6 bg-white/85 backdrop-blur-md shadow-md border border-white/60">
+          <span id="borewellLabel" class="text-xs font-bold text-slate-500 uppercase">Borewell Level</span>
+          <p id="borewellLevel" class="text-4xl font-extrabold text-slate-800 mt-2">65 cm</p>
+          <p id="groundwaterTrend" class="text-xs font-bold text-emerald-600 mt-3">↑ Safe Operating Aquifer</p>
+        </div>
+      </div>
+
+      <!-- LIVE TELEMETRY BAR WITH HUMIDITY -->
+      <div class="glass-card rounded-3xl p-6 bg-white/85 backdrop-blur-md shadow-md border border-white/60 space-y-4">
+        <div class="flex justify-between items-center">
+          <h3 id="telemetryTitle" class="text-xs font-extrabold text-slate-500 uppercase tracking-wider">Live Agricultural Telemetry</h3>
+          <span id="appModeBadge" class="text-xs font-bold px-3 py-1 bg-[#0284c7]/10 text-[#0284c7] rounded-full border border-[#0284c7]/20">MODE: AGRICULTURE</span>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-4">
+          <div class="bg-slate-100/80 p-4 rounded-2xl border border-slate-200/60">
+            <span id="lblTemp" class="text-xs text-slate-500 font-semibold">🌡️ Temp</span>
+            <p id="tempVal" class="text-xl font-bold text-slate-800 mt-1">29.2 °C</p>
+          </div>
+          <div class="bg-slate-100/80 p-4 rounded-2xl border border-slate-200/60">
+            <span id="lblHumidity" class="text-xs text-slate-500 font-semibold">💧 Air Humidity</span>
+            <p id="humidityVal" class="text-xl font-bold text-slate-800 mt-1">62 %</p>
+          </div>
+          <div class="bg-slate-100/80 p-4 rounded-2xl border border-slate-200/60">
+            <span id="metric2Label" class="text-xs text-slate-500 font-semibold">🌱 Soil Moisture</span>
+            <p id="metric2Val" class="text-xl font-bold text-slate-800 mt-1">45 %</p>
+          </div>
+          <div class="bg-slate-100/80 p-4 rounded-2xl border border-slate-200/60">
+            <span id="tdsLabel" class="text-xs text-slate-500 font-semibold">🧂 Water TDS</span>
+            <p id="tdsVal" class="text-xl font-bold text-slate-800 mt-1">320 PPM</p>
+          </div>
+          <div class="bg-slate-100/80 p-4 rounded-2xl border border-slate-200/60">
+            <span id="lblSalinity" class="text-xs text-slate-500 font-semibold">🌊 Salinity Level</span>
+            <p id="salinityVal" class="text-xl font-bold text-slate-800 mt-1">0.5 dS/m</p>
+            <span id="salinityBadge" class="text-[10px] font-extrabold text-emerald-600 block mt-0.5">SAFE / FRESH</span>
+          </div>
+          <div class="bg-slate-100/80 p-4 rounded-2xl border border-slate-200/60">
+            <span id="metric4Label" class="text-xs text-slate-500 font-semibold">🌧️ Rainfall</span>
+            <p id="metric4Val" class="text-xl font-bold text-slate-800 mt-1">0 mm/hr</p>
+          </div>
+          <div class="bg-slate-100/80 p-4 rounded-2xl border border-slate-200/60 col-span-2 sm:col-span-1">
+            <span id="usageLabel" class="text-xs text-slate-500 font-semibold">🚰 Water Flow</span>
+            <p id="usageVal" class="text-xl font-bold text-slate-800 mt-1">180 L/hr</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- CROP WATER ALLOCATION & REQUIREMENT MONITOR -->
+      <div id="cropRequirementPanel" class="glass-card rounded-3xl p-6 bg-white/85 backdrop-blur-md shadow-md border border-white/60 space-y-6">
+        <div class="flex justify-between items-center border-b border-slate-200/80 pb-4">
+          <div>
+            <span id="cropMonitorSub" class="text-xs font-extrabold text-[#0284c7] uppercase tracking-wider">Precision Crop Hydration Monitor</span>
+            <h3 id="cropMonitorTitle" class="text-lg font-extrabold text-slate-800 mt-0.5">🌾 Plant Water Requirements & Deficit Analytics</h3>
+          </div>
+          <span id="cropMonitorBadge" class="text-xs font-bold px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full border border-emerald-200">Soil Evapotranspiration Active</span>
+        </div>
+
+        <div id="cropCardsGrid" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
+      </div>
+
+      <!-- WINDY LIVE WEATHER MAP -->
+      <section class="glass-card rounded-3xl p-6 bg-white/90 backdrop-blur-md border border-white/60 shadow-md">
+        <div class="flex justify-between items-center mb-4">
+          <div>
+            <span id="weatherSub" class="text-xs font-bold text-[#0284c7] uppercase tracking-wider">Meteorological Radar</span>
+            <h3 id="weatherTitle" class="text-lg font-extrabold text-slate-800 mt-0.5">🌧️ Live Regional Weather & Precipitation Map</h3>
+          </div>
+          <span class="text-xs font-bold px-3 py-1 bg-sky-100 text-[#0284c7] rounded-full border border-sky-200">Powered by Windy.com</span>
+        </div>
+        <div class="w-full h-96 rounded-2xl overflow-hidden border border-slate-200/80 shadow-inner">
+          <iframe id="windyFrame" class="w-full h-full border-0" src="https://embed.windy.com/embed2.html?lat=13.0827&lon=80.2707&detailLat=13.0827&detailLon=80.2707&width=650&height=450&zoom=8&level=surface&overlay=rain&product=ecmwf&menu=&message=true&marker=true&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=default&metricTemp=default&radarRange=-1" allowfullscreen></iframe>
+        </div>
+      </section>
+
+      <!-- AI DECISION ENGINE & SIMULATOR CONTROLS -->
+      <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 glass-card bg-gradient-to-br from-[#0284c7] to-[#0369a1] rounded-3xl p-8 text-white shadow-xl">
+          <div class="flex justify-between items-start mb-6">
+            <div>
+              <span id="decisionContextLabel" class="text-xs font-extrabold text-cyan-200 uppercase tracking-wider">AI Crop & Aquifer Engine</span>
+              <h2 id="decisionStatusTitle" class="text-2xl font-extrabold text-white mt-1">🟢 OPTIMAL WATER ALLOCATION</h2>
+            </div>
+            <span id="lblLiveOpt" class="px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-bold text-cyan-100 border border-white/20">Live Optimization</span>
+          </div>
+
+          <div class="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 mb-6">
+            <p id="lblTriggerBreakdown" class="text-xs font-bold text-cyan-200 uppercase tracking-wider">Trigger Breakdown</p>
+            <p id="decisionReason" class="text-sm font-semibold mt-1 text-white/90">Moderate temperatures and safe soil moisture levels detected across field zones.</p>
+          </div>
+
+          <div class="space-y-3">
+            <p id="lblActions" class="text-xs font-bold text-cyan-200 uppercase tracking-wider">Automated Actions & Recommendations</p>
+            <ul id="recommendationList" class="space-y-2 text-sm font-medium"></ul>
+          </div>
+        </div>
+
+        <div class="glass-card rounded-3xl p-8 flex flex-col justify-between bg-white/90 backdrop-blur-md border border-white/60 shadow-md">
+          <div>
+            <span id="lblStressCtrl" class="text-xs font-extrabold text-slate-400 uppercase tracking-wider">Environment Stress Controller</span>
+            <h3 id="lblStressSim" class="text-lg font-extrabold text-slate-800 mt-1">Stress Mode Simulator</h3>
+            <p id="lblStressDesc" class="text-xs text-slate-500 mt-2 font-medium">Toggle stress conditions to test automated phone calls to logged-in user, salinity warnings, and regional sync.</p>
+          </div>
+
+          <div class="space-y-4 my-6">
+            <button id="btnNormal" onclick="setScenario('normal')" class="w-full py-3.5 px-6 rounded-2xl font-bold text-sm bg-emerald-500 text-white shadow-md transition-all flex justify-between items-center">
+              <span id="txtNormalCond">NORMAL CONDITIONS</span>
+              <span>🟢</span>
+            </button>
+            <button id="btnElNino" onclick="setScenario('elnino')" class="w-full py-3.5 px-6 rounded-2xl font-bold text-sm bg-slate-200 text-slate-700 hover:bg-red-500 hover:text-white transition-all flex justify-between items-center">
+              <span id="txtDroughtCond">EL NIÑO DROUGHT MODE</span>
+              <span>🔴</span>
+            </button>
+          </div>
+
+          <div id="lblCallInfo" class="p-3 bg-slate-100/90 rounded-2xl text-[11px] font-semibold text-slate-500 border border-slate-200/60">
+            🔊 Critical stress triggers an actual outbound phone call to your logged-in mobile number in Tamil & English.
+          </div>
+        </div>
+      </section>
+
+      <!-- TREND GRAPH -->
+      <section class="glass-card rounded-3xl p-8 bg-white/90 backdrop-blur-md border border-white/60 shadow-md">
+        <h3 id="graphTitle" class="text-xs font-extrabold text-slate-400 uppercase tracking-wider mb-6">Real-Time Telemetry Trends</h3>
+        <div class="relative h-72">
+          <canvas id="telemetryChart"></canvas>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- PAGE 2: VILLAGE OFFICER DASHBOARD -->
+    <div id="pageVillage" class="hidden space-y-8">
+      <div class="glass-card rounded-3xl p-8 bg-white/95 backdrop-blur-md border border-white/60 shadow-xl">
+        <div class="flex justify-between items-center mb-6">
+          <div>
+            <span id="villageSub" class="text-xs font-extrabold text-emerald-700 uppercase tracking-wider">Rural Groundwater Authority Command Center</span>
+            <h2 id="villageTitle" class="text-2xl font-extrabold text-slate-900 mt-1">🌾 Village Regional Water Resource Grid</h2>
+          </div>
+          <span class="px-4 py-1.5 bg-emerald-100 text-emerald-800 text-xs font-extrabold rounded-full border border-emerald-200">District: Sector 4 - Rural Cluster</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
+          <div class="bg-emerald-50/90 p-4 rounded-2xl border border-emerald-200">
+            <span id="lblClusterStress" class="text-xs font-bold text-emerald-800 uppercase">Cluster Stress Score</span>
+            <p id="agriAvgStress" class="text-3xl font-extrabold text-emerald-950 mt-1">36/100</p>
+          </div>
+          <div class="bg-emerald-50/90 p-4 rounded-2xl border border-emerald-200">
+            <span id="lblAvgBorewell" class="text-xs font-bold text-emerald-800 uppercase">Avg Aquifer Drawdown</span>
+            <p id="agriAvgBorewell" class="text-3xl font-extrabold text-emerald-950 mt-1">61 cm</p>
+          </div>
+          <div class="bg-emerald-50/90 p-4 rounded-2xl border border-emerald-200">
+            <span id="lblAvgTds" class="text-xs font-bold text-emerald-800 uppercase">Avg Irrigation TDS</span>
+            <p id="agriAvgTds" class="text-3xl font-extrabold text-emerald-950 mt-1">410 PPM</p>
+          </div>
+          <div class="bg-emerald-50/90 p-4 rounded-2xl border border-emerald-200">
+            <span id="lblAvgSal" class="text-xs font-bold text-emerald-800 uppercase">Avg Soil Salinity</span>
+            <p id="agriAvgSalinity" class="text-3xl font-extrabold text-emerald-950 mt-1">0.64 dS/m</p>
+          </div>
+          <div class="bg-emerald-50/90 p-4 rounded-2xl border border-emerald-200">
+            <span id="lblActivePumps" class="text-xs font-bold text-emerald-800 uppercase">Active Sub-Pumps</span>
+            <p class="text-3xl font-extrabold text-emerald-950 mt-1">14 / 16</p>
+          </div>
+        </div>
+
+        <h3 id="lblAgriTableTitle" class="text-xs font-extrabold text-slate-500 uppercase tracking-wider mb-4">Live Registered Agricultural Field Nodes</h3>
+        <div class="overflow-x-auto rounded-2xl border border-slate-200">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-slate-100 text-slate-500 uppercase text-[11px] font-bold">
+              <tr>
+                <th id="thAgriPhone" class="p-3.5">User Phone / ID</th>
+                <th id="thAgriZone" class="p-3.5">Crop Zone</th>
+                <th id="thAgriMoist" class="p-3.5">Soil Moisture</th>
+                <th id="thAgriBore" class="p-3.5">Borewell Level</th>
+                <th id="thAgriSal" class="p-3.5">Salinity (dS/m)</th>
+                <th id="thAgriFlow" class="p-3.5">Flow Rate</th>
+                <th id="thAgriStatus" class="p-3.5">Status</th>
+              </tr>
+            </thead>
+            <tbody id="agriUsersTableBody" class="divide-y divide-slate-100 font-medium text-slate-700"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE 3: CITY OFFICER DASHBOARD -->
+    <div id="pageCity" class="hidden space-y-8">
+      <div class="glass-card rounded-3xl p-8 bg-white/95 backdrop-blur-md border border-white/60 shadow-xl">
+        <div class="flex justify-between items-center mb-6">
+          <div>
+            <span id="citySub" class="text-xs font-extrabold text-indigo-700 uppercase tracking-wider">Municipal Water Supply Grid Command Center</span>
+            <h2 id="cityTitle" class="text-2xl font-extrabold text-slate-900 mt-1">🏙️ Metropolitan Water Grid Overview</h2>
+          </div>
+          <span class="px-4 py-1.5 bg-indigo-100 text-indigo-800 text-xs font-extrabold rounded-full border border-indigo-200">Zone 12 - Urban Metro</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
+          <div class="bg-indigo-50/90 p-4 rounded-2xl border border-indigo-200">
+            <span id="lblUrbanStress" class="text-xs font-bold text-indigo-800 uppercase">Urban Stress Index</span>
+            <p id="cityAvgStress" class="text-3xl font-extrabold text-indigo-950 mt-1">29/100</p>
+          </div>
+          <div class="bg-indigo-50/90 p-4 rounded-2xl border border-indigo-200">
+            <span id="lblAvgOht" class="text-xs font-bold text-indigo-800 uppercase">Avg OHT Reservoir</span>
+            <p id="cityAvgTank" class="text-3xl font-extrabold text-indigo-950 mt-1">74%</p>
+          </div>
+          <div class="bg-indigo-50/90 p-4 rounded-2xl border border-indigo-200">
+            <span id="lblAvgPress" class="text-xs font-bold text-indigo-800 uppercase">Avg Pipe Pressure</span>
+            <p id="cityAvgPressure" class="text-3xl font-extrabold text-indigo-950 mt-1">2.3 bar</p>
+          </div>
+          <div class="bg-indigo-50/90 p-4 rounded-2xl border border-indigo-200">
+            <span id="lblCitySal" class="text-xs font-bold text-indigo-800 uppercase">Tap Water Salinity</span>
+            <p id="cityAvgSalinity" class="text-3xl font-extrabold text-indigo-950 mt-1">0.48 dS/m</p>
+          </div>
+          <div class="bg-indigo-50/90 p-4 rounded-2xl border border-indigo-200">
+            <span id="lblCityBooster" class="text-xs font-bold text-indigo-800 uppercase">Main Booster Pumps</span>
+            <p class="text-3xl font-extrabold text-indigo-950 mt-1">8 / 8</p>
+          </div>
+        </div>
+
+        <h3 id="lblCityTableTitle" class="text-xs font-extrabold text-slate-500 uppercase tracking-wider mb-4">Live Registered Municipal Household Connections</h3>
+        <div class="overflow-x-auto rounded-2xl border border-slate-200">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-slate-100 text-slate-500 uppercase text-[11px] font-bold">
+              <tr>
+                <th id="thCityPhone" class="p-3.5">User Phone / ID</th>
+                <th id="thCityWard" class="p-3.5">Ward Sector</th>
+                <th id="thCityTank" class="p-3.5">Tank Level</th>
+                <th id="thCityPress" class="p-3.5">Supply Pressure</th>
+                <th id="thCitySal" class="p-3.5">Salinity (dS/m)</th>
+                <th id="thCityUsage" class="p-3.5">Daily Usage</th>
+                <th id="thCityStatus" class="p-3.5">Status</th>
+              </tr>
+            </thead>
+            <tbody id="cityUsersTableBody" class="divide-y divide-slate-100 font-medium text-slate-700"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

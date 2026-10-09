@@ -1,0 +1,47 @@
+const express = require('express');
+const cors = require('cors');
+const twilio = require('twilio');
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+// Enter your Twilio credentials from https://console.twilio.com
+const accountSid = 'YOUR_TWILIO_ACCOUNT_SID';
+const authToken = 'YOUR_TWILIO_AUTH_TOKEN';
+const twilioPhoneNumber = '+18005550199'; // Your Twilio Voice Number
+
+const client = twilio(accountSid, authToken);
+
+app.post('/api/make-call', async (req, res) => {
+  const { phoneNumber, messageEnglish, messageTamil } = req.body;
+
+  if (!phoneNumber) {
+    return res.status(400).json({ error: 'Phone number is required.' });
+  }
+
+  // Dual Language Voice TwiML
+  const twiml = `
+    <Response>
+      <Say voice="Polly.Aditi" language="en-IN">${messageEnglish}</Say>
+      <Pause length="1"/>
+      <Say voice="Polly.Aditi" language="ta-IN">${messageTamil}</Say>
+    </Response>
+  `;
+
+  try {
+    const call = await client.calls.create({
+      twiml: twiml,
+      to: phoneNumber,
+      from: twilioPhoneNumber,
+    });
+
+    console.log(`Outbound Call Created! SID: ${call.sid}`);
+    res.json({ success: true, callSid: call.sid });
+  } catch (error) {
+    console.error('Twilio Call Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.listen(3000, () => console.log('AQUA-NEXUS Twilio Voice Server active on port 3000'));
