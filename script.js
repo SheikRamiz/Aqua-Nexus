@@ -9,7 +9,7 @@ let telemetryChart = null;
 
 // Twilio Credentials
 const TWILIO_ACCOUNT_SID = "ACf75251fc75ade8baf1d684e14da9be87";
-const TWILIO_AUTH_TOKEN = "1548d1d48028ac2c8eb4e184bd4f7d54";
+const TWILIO_AUTH_TOKEN = "08f3b7da3dcb61f00d8eb0e79afe6348";
 const TWILIO_PHONE_NUMBER = "+17372508034";
 
 // Replace with your TwiML Bin URL from Twilio Console (Develop > Functions & Assets > TwiML Bins)
