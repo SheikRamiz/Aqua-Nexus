@@ -583,9 +583,9 @@ function triggerVoiceCallAlert(englishMessage, tamilMessage) {
   const twimlPayload = `<Response><Say language="en-US">${englishMessage}</Say><Pause length="1"/><Say language="ta-IN">${tamilMessage}</Say></Response>`;
 
   const formData = new URLSearchParams();
-  formData.append('To', targetPhone);
-  formData.append('From', TWILIO_PHONE_NUMBER);
-  formData.append('Twiml', twimlPayload); // Passed 'Twiml' parameter directly instead of 'Url'
+  formData.set('To', targetPhone);
+  formData.set('From', TWILIO_PHONE_NUMBER);
+  formData.set('Twiml', twimlPayload); // Explicit 'Twiml' parameter bypasses TwiML server check
 
   fetch(twilioApiUrl, {
     method: 'POST',
