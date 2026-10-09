@@ -564,7 +564,7 @@ function applyViewAndTheme() {
   }
 }
 
-// Outbound Voice Call Dispatcher via Direct TwiML Payload (No TwiML Bins or Server URLs required)
+// Outbound Voice Call Dispatcher via GitHub Pages TwiML URL
 function triggerVoiceCallAlert(englishMessage, tamilMessage) {
   const now = Date.now();
   if (now - lastVoiceAlertTime < 15000) return;
@@ -579,13 +579,13 @@ function triggerVoiceCallAlert(englishMessage, tamilMessage) {
 
   const twilioApiUrl = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Calls.json`;
 
- // Pass the GitHub Raw XML URL using 'Url'
-  const xmlUrl = "https://raw.githubusercontent.com/SheikRamiz/Aqua-Nexus/main/voice.xml";
+  // Public GitHub Pages URL hosting your voice.xml TwiML
+  const twimlUrl = "https://sheikramiz.github.io/Aqua-Nexus/voice.xml";
 
   const formData = new URLSearchParams();
-  formData.set('To', targetPhone);
-  formData.set('From', TWILIO_PHONE_NUMBER);
-  formData.set('Url', xmlUrl); // Works natively on Twilio Trial Accounts!
+  formData.append('To', targetPhone);
+  formData.append('From', TWILIO_PHONE_NUMBER);
+  formData.append('Url', twimlUrl); // Works natively on Twilio Trial Accounts
 
   fetch(twilioApiUrl, {
     method: 'POST',
