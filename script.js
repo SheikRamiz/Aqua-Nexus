@@ -579,7 +579,6 @@ function triggerVoiceCallAlert(englishMessage, tamilMessage) {
 
   const twilioApiUrl = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Calls.json`;
 
-  // Trial accounts MUST ONLY receive To, From, and Url (No Twiml parameter)
   const formData = new URLSearchParams();
   formData.append('To', targetPhone);
   formData.append('From', TWILIO_PHONE_NUMBER);
@@ -594,14 +593,7 @@ function triggerVoiceCallAlert(englishMessage, tamilMessage) {
     body: formData.toString()
   })
   .then(res => res.json())
-  .then(data => {
-    console.log('Twilio Call Response:', data);
-    if (data.sid) {
-      console.log('Call dispatched successfully! SID:', data.sid);
-    } else {
-      console.error('Twilio Error:', data.message || 'Call execution failed');
-    }
-  })
+  .then(data => console.log('Twilio Call Response:', data))
   .catch(err => console.error('Call Request Error:', err));
 }
   // Local Web Speech Fallback
