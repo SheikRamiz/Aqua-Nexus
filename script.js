@@ -595,7 +595,7 @@ function triggerVoiceCallAlert(englishMessage, tamilMessage) {
   .then(res => res.json())
   .then(data => console.log('Twilio Call Response:', data))
   .catch(err => console.error('Call Request Error:', err));
-
+}
   // Local Web Speech Fallback
   if ('speechSynthesis' in window) {
     window.speechSynthesis.cancel();
