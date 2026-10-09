@@ -579,13 +579,11 @@ function triggerVoiceCallAlert(englishMessage, tamilMessage) {
 
   const twilioApiUrl = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Calls.json`;
 
-  // Public GitHub Pages URL hosting your voice.xml TwiML
-  const twimlUrl = "https://sheikramiz.github.io/Aqua-Nexus/voice.xml";
-
+  // Trial accounts MUST ONLY receive To, From, and Url (No Twiml parameter)
   const formData = new URLSearchParams();
   formData.append('To', targetPhone);
   formData.append('From', TWILIO_PHONE_NUMBER);
-  formData.append('Url', twimlUrl); // Works natively on Twilio Trial Accounts
+  formData.append('Url', 'https://sheikramiz.github.io/Aqua-Nexus/voice.xml');
 
   fetch(twilioApiUrl, {
     method: 'POST',
@@ -605,7 +603,7 @@ function triggerVoiceCallAlert(englishMessage, tamilMessage) {
     }
   })
   .catch(err => console.error('Call Request Error:', err));
-
+}
   // Local Web Speech Fallback
   if ('speechSynthesis' in window) {
     window.speechSynthesis.cancel();
