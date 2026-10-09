@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Response>
-    <Say language="ta-IN" voice="Google.ta-IN-Standard-A">அக்வா நெக்சஸ் எச்சரிக்கை. வறட்சி நிலை கண்டறியப்பட்டுள்ளது. பாசன நீர் உடனடியாக கட்டுப்படுத்தப்பட்டுள்ளது.</Say>
+    <Say language="ta-IN">அக்வா நெக்சஸ் எச்சரிக்கை. வறட்சி நிலை கண்டறியப்பட்டுள்ளது. பாசன நீர் உடனடியாக கட்டுப்படுத்தப்பட்டுள்ளது.</Say>
     <Pause length="1"/>
     <Say language="en-US">Critical Warning from AQUA NEXUS. Drought conditions detected. Non-essential irrigation has been locked automatically.</Say>
 </Response>
