@@ -583,7 +583,7 @@ function triggerVoiceCallAlert(englishMessage, tamilMessage) {
   formData.append('To', targetPhone);
   formData.append('From', TWILIO_PHONE_NUMBER);
   formData.append('Url', 'https://sheikramiz.github.io/Aqua-Nexus/voice.xml');
-  
+
   fetch(twilioApiUrl, {
     method: 'POST',
     headers: {
