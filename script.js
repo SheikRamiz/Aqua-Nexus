@@ -579,13 +579,13 @@ function triggerVoiceCallAlert(englishMessage, tamilMessage) {
 
   const twilioApiUrl = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Calls.json`;
 
-  // Inline TwiML Payload (English + Tamil)
-  const twimlPayload = `<Response><Say language="en-US">${englishMessage}</Say><Pause length="1"/><Say language="ta-IN">${tamilMessage}</Say></Response>`;
+ // Pass the GitHub Raw XML URL using 'Url'
+  const xmlUrl = "https://raw.githubusercontent.com/SheikRamiz/Aqua-Nexus/main/voice.xml";
 
   const formData = new URLSearchParams();
   formData.set('To', targetPhone);
   formData.set('From', TWILIO_PHONE_NUMBER);
-  formData.set('Twiml', twimlPayload); // Explicit 'Twiml' parameter bypasses TwiML server check
+  formData.set('Url', xmlUrl); // Works natively on Twilio Trial Accounts!
 
   fetch(twilioApiUrl, {
     method: 'POST',
