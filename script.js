@@ -9,7 +9,7 @@ let telemetryChart = null;
 
 // Twilio Credentials
 const TWILIO_ACCOUNT_SID = "ACf75251fc75ade8baf1d684e14da9be87";
-const TWILIO_AUTH_TOKEN = "08f3b7da3dcb61f00d8eb0e79afe6348"; // Ensure this is your latest active token from Twilio Console
+const TWILIO_AUTH_TOKEN = "08f3b7da3dcb61f00d8eb0e79afe6348"; // Copy fresh token from Twilio Console if rotated
 const TWILIO_PHONE_NUMBER = "+17372508034";
 
 // Telemetry State
@@ -564,7 +564,7 @@ function applyViewAndTheme() {
   }
 }
 
-// Outbound Voice Call Dispatcher using Direct TwiML Payload (Bypassing TwiML Bins)
+// Outbound Voice Call Dispatcher via Direct TwiML Payload (No TwiML Bins or Server URLs required)
 function triggerVoiceCallAlert(englishMessage, tamilMessage) {
   const now = Date.now();
   if (now - lastVoiceAlertTime < 15000) return;
@@ -575,21 +575,17 @@ function triggerVoiceCallAlert(englishMessage, tamilMessage) {
     targetPhone = '+91' + targetPhone;
   }
 
-  console.log(`Initiating Twilio Direct Call to target number: ${targetPhone}`);
+  console.log(`Initiating Direct Twilio Call to target number: ${targetPhone}`);
 
   const twilioApiUrl = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Calls.json`;
 
-  // Dynamic TwiML payload combining the passed alerts
-  const twimlMessage = `<Response>
-      <Say language="en-US">${englishMessage}</Say>
-      <Pause length="1"/>
-      <Say language="ta-IN">${tamilMessage}</Say>
-  </Response>`;
+  // Inline TwiML Payload (English + Tamil)
+  const twimlPayload = `<Response><Say language="en-US">${englishMessage}</Say><Pause length="1"/><Say language="ta-IN">${tamilMessage}</Say></Response>`;
 
   const formData = new URLSearchParams();
   formData.append('To', targetPhone);
   formData.append('From', TWILIO_PHONE_NUMBER);
-  formData.append('Twiml', twimlMessage);
+  formData.append('Twiml', twimlPayload); // Passed 'Twiml' parameter directly instead of 'Url'
 
   fetch(twilioApiUrl, {
     method: 'POST',
@@ -605,7 +601,7 @@ function triggerVoiceCallAlert(englishMessage, tamilMessage) {
     if (data.sid) {
       console.log('Call dispatched successfully! SID:', data.sid);
     } else {
-      console.error('Twilio Error:', data.message || 'Call failed');
+      console.error('Twilio Error:', data.message || 'Call execution failed');
     }
   })
   .catch(err => console.error('Call Request Error:', err));
